@@ -31,7 +31,7 @@ To install all requirements on PC in an easy way, we provide a Dockerfile at `co
 ```shell
 cd /path/to/codl-mobisys2022-artifact-evaluation
 
-docker build -t codl/codl -f ./Dockerfile
+docker build -t codl/codl -f ./Dockerfile .
 ```
 
 Then you can run a Docker container using the Docker image as follow:
