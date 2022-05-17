@@ -107,3 +107,9 @@ The output of this step is the inference latency of deep learning models execute
 [VERBOSE] model yolo_v2, exec_type codl, round 0, lat 131.93, ...
 ...
 ```
+
+## Trouble Shooting
+
+### Issue 1: Step 4 gets stuck
+
+We find that the step 4 may get stuck on some smartphones such as Honor V30 Pro. Maybe it is caused by the process management of OS on mobile devices. We have not found the solution to this issue. If you have a solution, please don't hesitate to contact us.
