@@ -23,8 +23,8 @@ If you use a docker container to setup, these requirements should be further ins
 |Java|>=1.8.0|`apt-get install default-jre default-jdk`|
 |Git|>=2.7.4|`apt-get install git`|
 |Libtinfo5|>=6.0|`apt-get install libtinfo5`|
-|MarkupSafe|1.1.1|`python -m pip install MarkupSafe==1.1.1`|
-|CMake|>=3.22.4|`python -m pip install cmake==3.22.4`|
+|MarkupSafe|2.0.1|`python -m pip install MarkupSafe==2.0.1`|
+|CMake|>=3.22.4|`apt-get install cmake`|
 
 To install all requirements on PC in an easy way, we provide a Dockerfile at `codl-mobisys2022-artifact-evaluation/Dockerfile`. You can build the Docker image as follow:
 
@@ -37,7 +37,7 @@ docker build -t codl/codl -f ./Dockerfile
 Then you can run a Docker container using the Docker image as follow:
 
 ```shell
-docker run -it --name codl-u16 --privileged -v /dev/bus/usb:/dev/bus/usb -h codl-u16 codl/codl:latest /bin/bash
+docker run -it --name codl-u16 --privileged -v /dev/bus/usb:/dev/bus/usb codl/codl:latest /bin/bash
 ```
 
 Note that the Docker version we use is 20.10.12 (build e91ed57). We use the `-v /dev/bus/usb:/dev/bus/usb` argument of Docker to enable the ADB connection with USB in a Docker container. We basically follow the instruction of [How to connect adb devices to linux container](http://learningbysimpleway.blogspot.com/2018/02/how-to-connect-adb-devices-to-linux.html). You can refer to it if you want more details about the setup of ADB connection with USB in a Docker container.
@@ -101,13 +101,13 @@ Note that we create a directory at `/data/local/tmp/codl` on the mobile device a
 
 ### Issue 1: /bin/bash: cmake: command not found
 
-This issue occurs if there is no CMake in your environment. The complete log text of this issue is as follows. The solution is installing CMake by `python -m pip install cmake==3.22.4`.
+This issue occurs if there is no CMake in your environment. The complete log text of this issue is as follows. The solution is installing CMake by `sudo apt-get install cmake`.
 
 ```shell
 ERROR: /root/.cache/bazel/_bazel_root/e78289bffba4bcf497303d5b399049da/external/opencl_clhpp/BUILD.bazel:5:1: Executing genrule @opencl_clhpp//:gen_opencl_clhpp failed (Exit 127): bash failed: error executing command 
   (cd /root/.cache/bazel/_bazel_root/e78289bffba4bcf497303d5b399049da/execroot/mace && \
   exec env - \
-    PATH=/home/fuchengjia/Software/bazel:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PATH=/home/ubuntu/Software/bazel:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
   /bin/bash -c 'source external/bazel_tools/tools/genrule/genrule-setup.sh; workdir=$(mktemp -d -t opencl-clhpp-build.XXXXXXXXXX); cp -aL $(dirname external/opencl_clhpp/CMakeLists.txt)/* $workdir; pushd $workdir; mkdir build; pushd build; cmake ../ -DBUILD_DOCS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF; make generate_clhpp generate_cl2hpp; popd; popd; cp -a $workdir/build/* bazel-out/arm64-v8a-opt/genfiles/external/opencl_clhpp; rm -rf $workdir; echo installing to  bazel-out/arm64-v8a-opt/genfiles/external/opencl_clhpp')
 
 Use --sandbox_debug to see verbose messages from the sandbox
@@ -147,7 +147,7 @@ This issue occurs if you map the directory `/path/to/codl-mobile` to a directory
 ERROR: /root/.cache/bazel/_bazel_root/05270bc57d83ec6806bb1cda0cfefe97/external/opencl_clhpp/BUILD.bazel:5:1: Executing genrule @opencl_clhpp//:gen_opencl_clhpp failed (Exit 1): bash failed: error executing command 
   (cd /root/.cache/bazel/_bazel_root/05270bc57d83ec6806bb1cda0cfefe97/execroot/mace && \
   exec env - \
-    PATH=/home/fuchengjia/Software/bazel:/usr/local/bin:/home/root/Software/bazel:/usr/local/bin:/home/fuchengjia/Software/bazel:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PATH=/home/ubuntu/Software/bazel:/usr/local/bin:/home/root/Software/bazel:/usr/local/bin:/home/ubuntu/Software/bazel:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
   /bin/bash -c 'source external/bazel_tools/tools/genrule/genrule-setup.sh; workdir=$(mktemp -d -t opencl-clhpp-build.XXXXXXXXXX); cp -aL $(dirname external/opencl_clhpp/CMakeLists.txt)/* $workdir; pushd $workdir; mkdir build; pushd build; cmake ../ -DBUILD_DOCS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF; make generate_clhpp generate_cl2hpp; popd; popd; cp -a $workdir/build/* bazel-out/arm64-v8a-opt/genfiles/external/opencl_clhpp; rm -rf $workdir; echo installing to  bazel-out/arm64-v8a-opt/genfiles/external/opencl_clhpp')
 
 Use --sandbox_debug to see verbose messages from the sandbox
