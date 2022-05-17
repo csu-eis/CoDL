@@ -1,0 +1,131 @@
+# Partially borrowed from tensorflow tools/bazel.rc
+
+# By default, we don't distinct target and host platfroms.
+build --distinct_host_configuration=false
+
+build --verbose_failures
+build --copt=-std=c++17
+build --copt=-fPIC
+build --copt=-D_GLIBCXX_USE_C99_MATH_TR1
+build --copt=-DMACE_OBFUSCATE_LITERALS
+build --copt=-DGEMMLOWP_USE_MACE_THREAD_POOL
+build --copt=-DGEMMLOWP_TEST_PROFILE
+build --copt=-DMACE_DEPTHWISE_U8_USE_MULTI_THREAD
+
+# Usage example: bazel build --config android
+build:android --define linux_base=true
+build:android --linkopt=-pie
+build:android --linkopt=-ldl
+build:android --linkopt=-llog
+build:android --linkopt=-lm
+build:android --distinct_host_configuration=true
+build:android --crosstool_top=//external:android/crosstool
+build:android --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+build:android --copt -Wall
+build:android --copt -Wno-mismatched-tags
+build:android --copt -Wno-missing-braces
+
+# Linux host build, --config linux
+build:linux --define linux_base=true
+build:linux --define linux=true
+
+# MacOS host build, --config darwin
+build:darwin --define darwin=true
+build:darwin --cpu=darwin_x86_64
+build:darwin --copt -Wno-unused-lambda-capture
+build:darwin --copt -Wno-missing-braces
+
+# iOS and other darwin platforms, --config ios
+build:ios --define darwin=true
+build:ios --distinct_host_configuration=true
+build:ios --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+build:ios --cpu=ios_arm64
+build:ios --copt -Wno-unused-lambda-capture
+build:ios --copt -Wno-missing-braces
+
+# Usage example: bazel build --config arm_linux_gnueabihf
+# Used to fix library not find linking issue, see also:
+# https://github.com/bazelbuild/bazel/issues/6653,
+# https://github.com/bazelbuild/bazel/issues/6189
+build:arm_linux_gnueabihf --define linux_base=true
+build:arm_linux_gnueabihf --define linux=true
+build:arm_linux_gnueabihf --spawn_strategy=standalone
+build:arm_linux_gnueabihf --distinct_host_configuration=true
+build:arm_linux_gnueabihf --crosstool_top=//tools/arm_compiler:toolchain
+build:arm_linux_gnueabihf --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+build:arm_linux_gnueabihf --cpu=armhf
+build:arm_linux_gnueabihf --copt -mfloat-abi=hard
+build:arm_linux_gnueabihf --copt -mfpu=neon
+build:arm_linux_gnueabihf --copt -Wno-ignored-attributes
+build:arm_linux_gnueabihf --copt -Wno-unused-function
+build:arm_linux_gnueabihf --copt -Wno-sequence-point
+build:arm_linux_gnueabihf --copt -Wno-implicit-fallthrough
+
+# Usage example: bazel build --config aarch64_linux_gnu
+build:aarch64_linux_gnu --define linux_base=true
+build:aarch64_linux_gnu --define linux=true
+build:aarch64_linux_gnu --spawn_strategy=standalone
+build:aarch64_linux_gnu --distinct_host_configuration=true
+build:aarch64_linux_gnu --crosstool_top=//tools/aarch64_compiler:toolchain
+build:aarch64_linux_gnu --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+build:aarch64_linux_gnu --cpu=aarch64
+build:aarch64_linux_gnu --copt -Wno-ignored-attributes
+build:aarch64_linux_gnu --copt -Wno-unused-function
+build:aarch64_linux_gnu --copt -Wno-sequence-point
+build:aarch64_linux_gnu --copt -Wno-implicit-fallthrough
+
+# Usage example: bazel build --config optimization
+build:optimization -c opt
+build:optimization --copt=-O3
+build:optimization --linkopt=-Wl,--strip-all
+build:optimization --copt=-ffunction-sections
+build:optimization --copt=-fdata-sections
+build:optimization --linkopt=-Wl,--gc-sections
+
+# Usage example: bazel build --config optimization_darwin
+build:optimization_darwin --copt=-O3
+build:optimization_darwin --copt=-ffunction-sections
+build:optimization_darwin --copt=-fdata-sections
+build:optimization_darwin --linkopt=-Wl,-dead_strip
+
+# Usage example: bazel build --config symbol_hidden
+build:symbol_hidden --copt=-fvisibility=hidden
+
+# Usage example: bazel build --config debug
+build:debug -c dbg
+
+# Address sanitizer
+build:asan --strip=never
+build:asan --copt -fsanitize=address
+build:asan --copt -D_FORTIFY_SOURCE
+build:asan --copt -DADDRESS_SANITIZER
+build:asan --copt -O0
+build:asan --copt -g
+build:asan --copt -fno-omit-frame-pointer
+build:asan --linkopt -fsanitize=address
+
+# Thread sanitizer
+build:tsan --strip=never
+build:tsan --copt -fsanitize=thread
+build:tsan --copt -DTHREAD_SANITIZER
+build:tsan --copt -DDYNAMIC_ANNOTATIONS_ENABLED=1
+build:tsan --copt -DDYNAMIC_ANNOTATIONS_EXTERNAL_IMPL=1
+build:tsan --copt -O0
+build:tsan --copt -fno-omit-frame-pointer
+build:tsan --linkopt -fsanitize=thread
+
+# Memory sanitizer
+build:msan --strip=never
+build:msan --copt -fsanitize=memory
+build:msan --copt -DADDRESS_SANITIZER
+build:msan --copt -O0
+build:msan --copt -fno-omit-frame-pointer
+build:msan --linkopt -fsanitize=memory
+
+# Undefined Behavior Sanitizer
+build:ubsan --strip=never
+build:ubsan --copt -fsanitize=undefined
+build:ubsan --copt -O0
+build:ubsan --copt -fno-omit-frame-pointer
+build:ubsan --linkopt -fsanitize=undefined
+build:ubsan --linkopt -lubsan

@@ -1,0 +1,4 @@
+global_mem_cache_size: 262144
+compute_units: 3
+max_work_group_size: 1024
+kernel_wave_size: 64

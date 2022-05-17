@@ -1,0 +1,49 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])  # Apache 2.0
+
+load(
+    "//mace:mace.bzl",
+    "if_android",
+    "if_neon_enabled",
+    "if_opencl_enabled",
+    "if_rpcmem_enabled",
+    "if_buildlib_enabled",
+    "if_codl_enabled",
+)
+
+cc_library(
+    name = "test_base",
+    hdrs = ["compute_unit.h",
+            "test_param.h"],
+    srcs = ["test_param.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        "//mace/core",
+        "//mace/utils"
+    ]
+)
+
+cc_library(
+    name = "test_task",
+    hdrs = ["test_task.h"],
+    srcs = ["test_task.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        "//mace/core",
+        "//mace/utils",
+        ":test_base",
+        "//test/codl_run/utils:device_util",
+        "//test/codl_run/utils:tensor_buffer_util"
+    ]
+)

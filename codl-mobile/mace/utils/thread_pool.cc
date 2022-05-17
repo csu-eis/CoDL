@@ -1,0 +1,684 @@
+// Copyright 2019 The MACE Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <algorithm>
+#include <numeric>
+
+#include "mace/port/port.h"
+#include "mace/port/env.h"
+#include "mace/utils/logging.h"
+#include "mace/utils/spinlock.h"
+#include "mace/utils/math.h"
+#include "mace/utils/thread_pool.h"
+
+//#define MACE_ENABLE_THERAD_BIND_SINGLE_CORE
+#define MACE_ENABLE_THERAD_STEAL_WORK
+
+namespace mace {
+namespace utils {
+
+constexpr int kTileCountPerThread = 2;
+constexpr int kMaxCostUsingSingleThread = 100;
+constexpr int kMinCpuCoresForPerformance = 3;
+constexpr int kMaxCpuCoresForPerformance = 5;
+
+namespace {
+
+enum {
+  kThreadPoolNone = 0,
+  kThreadPoolInit = 1,
+  kThreadPoolRun = 2,
+  kThreadPoolShutdown = 4,
+  kThreadPoolEventMask = 0x7fffffff
+};
+
+struct CPUFreq {
+  size_t core_id;
+  float freq;
+};
+
+int GetCpuCoresForPerfomance(
+    const std::vector<CPUFreq> &cpu_freqs,
+    const std::function<bool(const float &x, const float &y)> &comp) {
+  float total_freq = std::accumulate(cpu_freqs.begin(), cpu_freqs.end(), 0,
+                                     [](float accum, CPUFreq cpu_freq) {
+                                       return accum + cpu_freq.freq;
+                                     });
+  int64_t valid_cpu_nums = std::count_if(cpu_freqs.begin(), cpu_freqs.end(),
+                                        [](CPUFreq cpu_freq) {
+                                          return cpu_freq.freq != 0;
+                                        });
+  float avg_freq = total_freq / valid_cpu_nums;
+
+  int cores_to_use = 0;
+  for (auto cpu_info : cpu_freqs) {
+    if ((comp(cpu_info.freq, avg_freq)
+        && cores_to_use < kMaxCpuCoresForPerformance)
+        || cores_to_use < kMinCpuCoresForPerformance) {
+      ++cores_to_use;
+    }
+  }
+
+  return cores_to_use;
+}
+
+}  // namespace
+
+MaceStatus GetCPUCoresToUse(const std::vector<float> &cpu_max_freqs,
+                            const CPUAffinityPolicy policy,
+                            int *thread_count,
+                            std::vector<size_t> *cores,
+                            std::vector<size_t> *big_cores,
+                            std::vector<size_t> *little_cores,
+                            const bool is_debug_info_enabled) {
+  if (cpu_max_freqs.empty()) {
+    *thread_count = 1;
+    LOG(ERROR) << "CPU core is empty";
+    return MaceStatus::MACE_RUNTIME_ERROR;
+  }
+  *thread_count = std::max(*thread_count, 0);
+  const int cpu_count = static_cast<int>(cpu_max_freqs.size());
+  if (*thread_count == 0 || *thread_count > cpu_count) {
+    *thread_count = cpu_count;
+  }
+
+  if (policy != CPUAffinityPolicy::AFFINITY_NONE) {
+    std::vector<CPUFreq> cpu_freq(cpu_max_freqs.size());
+    for (size_t i = 0; i < cpu_max_freqs.size(); ++i) {
+      cpu_freq[i].core_id = i;
+      cpu_freq[i].freq = cpu_max_freqs[i];
+    }
+    if (policy == CPUAffinityPolicy::AFFINITY_POWER_SAVE ||
+        policy == CPUAffinityPolicy::AFFINITY_LITTLE_ONLY) {
+      std::sort(cpu_freq.begin(),
+                cpu_freq.end(),
+                [=](const CPUFreq &lhs, const CPUFreq &rhs) {
+                  return lhs.freq < rhs.freq;
+                });
+    } else if (policy == CPUAffinityPolicy::AFFINITY_HIGH_PERFORMANCE ||
+        policy == CPUAffinityPolicy::AFFINITY_BIG_ONLY) {
+      std::sort(cpu_freq.begin(),
+                cpu_freq.end(),
+                [](const CPUFreq &lhs, const CPUFreq &rhs) {
+                  return lhs.freq > rhs.freq;
+                });
+
+      std::vector<size_t> freqs;
+      for (size_t i = 0; i < cpu_freq.size(); ++i) {
+        freqs.push_back((size_t) cpu_freq[i].freq);
+      }
+      if (is_debug_info_enabled) {
+        LOG(INFO) << "CPU Freq: " << VectorToString<size_t>(freqs);
+      }
+    }
+
+    // decide num of cores to use
+    int cores_to_use = 0;
+    if (policy == CPUAffinityPolicy::AFFINITY_BIG_ONLY) {
+      cores_to_use =
+          GetCpuCoresForPerfomance(cpu_freq, std::greater_equal<float>());
+    } else if (policy == CPUAffinityPolicy::AFFINITY_LITTLE_ONLY) {
+      cores_to_use =
+          GetCpuCoresForPerfomance(cpu_freq, std::less_equal<float>());
+    } else {
+      cores_to_use = *thread_count;
+    }
+    MACE_CHECK(cores_to_use > 0, "number of cores to use should > 0");
+    cores->resize(static_cast<size_t>(cores_to_use));
+    for (int i = 0; i < cores_to_use; ++i) {
+      if (is_debug_info_enabled) {
+        LOG(INFO) << "Bind thread to core: " << cpu_freq[i].core_id
+                  << " with freq " << cpu_freq[i].freq;
+      }
+      (*cores)[i] = static_cast<int>(cpu_freq[i].core_id);
+    }
+    
+    if (*thread_count == 0) {
+      *thread_count = cores_to_use;
+    }
+
+    if (policy == CPUAffinityPolicy::AFFINITY_BIG_ONLY &&
+        big_cores != nullptr && little_cores != nullptr) {
+      // NOTE(fucheng): Record big.LITTLE cores idx.
+      for (int i = 0; i < cores_to_use; ++i) {
+        big_cores->push_back(cpu_freq[i].core_id);
+      }
+      for (size_t i = cores_to_use; i < cpu_freq.size(); ++i) {
+        little_cores->push_back(cpu_freq[i].core_id);
+      }
+
+      LOG(INFO) << "Big cores idx: " << VectorToString<size_t>(*big_cores);
+      LOG(INFO) << "Little cores idx: " << VectorToString<size_t>(*little_cores);
+    }
+  }
+
+  return MaceStatus::MACE_SUCCESS;
+}
+
+ThreadPool::ThreadPool(const int thread_count_hint,
+                       const CPUAffinityPolicy policy)
+    : event_(kThreadPoolNone),
+      count_down_latch_(kDefaultSpinWaitTime) {
+  LOG(INFO) << "Creating thread pool";
+
+  int thread_count = thread_count_hint;
+
+  if (port::Env::Default()->GetCPUMaxFreq(&cpu_max_freqs_)
+      != MaceStatus::MACE_SUCCESS) {
+    LOG(ERROR) << "Fail to get cpu max frequencies";
+  }
+
+  std::vector<size_t> cores_to_use;
+  GetCPUCoresToUse(cpu_max_freqs_,
+                   policy,
+                   &thread_count,
+                   &cores_to_use,
+                   &big_cores_,
+                   &little_cores_,
+                   /* is_debug_info_enabled */ false);
+  MACE_CHECK(thread_count > 0);
+  VLOG(2) << "Use " << thread_count << " threads";
+  LOG(INFO) << "Use " << thread_count << " threads";
+
+  LOG(INFO) << "Cores to use: " << VectorToString<size_t>(cores_to_use);
+
+  if (!cores_to_use.empty()) {
+#ifdef MACE_ENABLE_THERAD_BIND_SINGLE_CORE
+    // Bind to a specific core.
+    std::vector<size_t> cpu_ids;
+    cpu_ids.push_back(cores_to_use[0]);
+    //LOG(INFO) << "CPU ids: " << VectorToString<size_t>(cpu_ids);
+    if (port::Env::Default()->SchedSetAffinity(cpu_ids)
+        != MaceStatus::MACE_SUCCESS) {
+      LOG(ERROR) << "Failed to sched_set_affinity";
+    }
+#else
+    if (port::Env::Default()->SchedSetAffinity(cores_to_use)
+        != MaceStatus::MACE_SUCCESS) {
+      LOG(ERROR) << "Failed to sched_set_affinity";
+    }
+#endif
+  }
+
+  default_tile_count_ = thread_count;
+  if (thread_count > 1) {
+    default_tile_count_ = thread_count * kTileCountPerThread;
+  }
+  MACE_CHECK(default_tile_count_ > 0, "default tile count should > 0");
+
+  threads_ = std::vector<std::thread>(static_cast<size_t>(thread_count));
+  thread_infos_ = std::vector<ThreadInfo>(static_cast<size_t>(thread_count));
+  for (auto &thread_info : thread_infos_) {
+    thread_info.cpu_cores = cores_to_use;
+  }
+
+  spin_wait_time_ = kDefaultSpinWaitTime;
+  LOG(INFO) << "Spin wait time: " << spin_wait_time_;
+}
+
+ThreadPool::~ThreadPool() {
+  LOG(INFO) << "Destroy thread pool";
+
+  // Clear affinity of main thread
+  if (!cpu_max_freqs_.empty()) {
+    std::vector<size_t> cores(cpu_max_freqs_.size());
+    for (size_t i = 0; i < cores.size(); ++i) {
+      cores[i] = i;
+    }
+    port::Env::Default()->SchedSetAffinity(cores);
+  }
+
+  Destroy();
+}
+
+void ThreadPool::Init() {
+  VLOG(2) << "Init thread pool";
+
+  if (threads_.size() <= 1) {
+    return;
+  }
+  count_down_latch_.Reset(static_cast<int>(threads_.size() - 1));
+  event_ = kThreadPoolInit;
+  for (size_t i = 1; i < threads_.size(); ++i) {
+    threads_[i] = std::thread(&ThreadPool::ThreadLoop, this, i);
+  }
+  count_down_latch_.Wait();
+}
+
+void ThreadPool::Run(const std::function<void(const int64_t)> &func,
+                     const int64_t iterations) {
+  const size_t thread_count = threads_.size();
+  const int64_t iters_per_thread = iterations / thread_count;
+  const int64_t remainder = iterations % thread_count;
+  int64_t iters_offset = 0;
+
+  std::unique_lock<std::mutex> run_lock(run_mutex_);
+
+  for (size_t i = 0; i < thread_count; ++i) {
+    int64_t range_len =
+        iters_per_thread + (static_cast<int64_t>(i) < remainder);
+    thread_infos_[i].range_start = iters_offset;
+    thread_infos_[i].range_len = range_len;
+    thread_infos_[i].range_end = iters_offset + range_len;
+    thread_infos_[i].func = reinterpret_cast<uintptr_t>(&func);
+    iters_offset = thread_infos_[i].range_end;
+#if 0
+    LOG(INFO) << "thread_idx " << i << ", range_len " << range_len;
+#endif
+  }
+
+  count_down_latch_.Reset(static_cast<int>(thread_count - 1));
+  {
+    std::unique_lock<std::mutex> m(event_mutex_);
+    event_.store(kThreadPoolRun | ~(event_ | kThreadPoolEventMask),
+                 std::memory_order::memory_order_release);
+    event_cond_.notify_all();
+  }
+
+  ThreadRun(0);
+  count_down_latch_.Wait();
+}
+
+void ThreadPool::WaitSubThreads() {
+  std::unique_lock<std::mutex> run_lock(run_mutex_);
+
+  count_down_latch_.Wait();
+}
+
+void ThreadPool::Destroy() {
+  VLOG(2) << "Destroy thread pool";
+
+  if (threads_.size() <= 1) {
+    return;
+  }
+
+  std::unique_lock<std::mutex> run_lock(run_mutex_);
+
+  count_down_latch_.Wait();
+  {
+    std::unique_lock<std::mutex> m(event_mutex_);
+    event_.store(kThreadPoolShutdown, std::memory_order::memory_order_release);
+    event_cond_.notify_all();
+  }
+
+  for (size_t i = 1; i < threads_.size(); ++i) {
+    if (threads_[i].joinable()) {
+      threads_[i].join();
+    } else {
+      VLOG(2) << "Thread: " << threads_[i].get_id() << " not joinable"
+              << std::endl;
+    }
+  }
+}
+
+// Event is executed synchronously.
+void ThreadPool::ThreadLoop(size_t tid) {
+  if (!thread_infos_[tid].cpu_cores.empty()) {
+#ifdef MACE_ENABLE_THERAD_BIND_SINGLE_CORE
+    // Bind to a specific core.
+    std::vector<size_t> cpu_ids;
+    cpu_ids.push_back(thread_infos_[tid].cpu_cores[tid]);
+    //LOG(INFO) << "CPU ids: " << VectorToString<size_t>(cpu_ids);
+    if (port::Env::Default()->SchedSetAffinity(cpu_ids)
+        != MaceStatus::MACE_SUCCESS) {
+      LOG(ERROR) << "Failed to sched_set_affinity";
+    }
+#else
+    if (port::Env::Default()->SchedSetAffinity(thread_infos_[tid].cpu_cores)
+        != MaceStatus::MACE_SUCCESS) {
+      LOG(ERROR) << "Failed to sched set affinity for tid: " << tid;
+    }
+#endif
+  }
+
+  int last_event = kThreadPoolNone;
+
+  for (;;) {
+    spinlock_.Wait(event_, last_event);
+    if (event_.load(std::memory_order::memory_order_acquire) == last_event) {
+      std::unique_lock<std::mutex> m(event_mutex_);
+      while (event_ == last_event) {
+#if 0
+        LOG(INFO) << "Thread id " << tid << " wait";
+#endif
+        event_cond_.wait(m);
+      }
+    }
+
+    int event = event_.load(std::memory_order::memory_order_acquire);
+    switch (event & kThreadPoolEventMask) {
+      case kThreadPoolInit: {
+        count_down_latch_.CountDown();
+        break;
+      }
+
+      case kThreadPoolRun: {
+        ThreadRun(tid);
+        count_down_latch_.CountDown();
+        break;
+      }
+
+      case kThreadPoolShutdown: return;
+      default: break;
+    }
+
+    last_event = event;
+  }
+}
+
+void ThreadPool::ThreadRun(size_t tid) {
+#if 0
+  LOG(INFO) << "Run thread " << tid;
+#endif
+  ThreadInfo &thread_info = thread_infos_[tid];
+  uintptr_t func_ptr = thread_info.func;
+  const std::function<void(int64_t)> *func =
+      reinterpret_cast<const std::function<void(int64_t)> *>(func_ptr);
+  // do own work
+  int64_t range_len;
+  while ((range_len = thread_info.range_len) > 0) {
+    if (thread_info.range_len.compare_exchange_strong(range_len,
+                                                      range_len - 1)) {
+      func->operator()(thread_info.range_start++);
+    }
+  }
+
+#ifdef MACE_ENABLE_THERAD_STEAL_WORK
+  // steal other threads' work
+  size_t thread_count = threads_.size();
+  for (size_t t = (tid + 1) % thread_count; t != tid;
+       t = (t + 1) % thread_count) {
+    ThreadInfo &other_thread_info = thread_infos_[t];
+    uintptr_t other_func_ptr = other_thread_info.func;
+    const std::function<void(int64_t)> *other_func =
+        reinterpret_cast<const std::function<void(int64_t)> *>(
+            other_func_ptr);
+    while ((range_len = other_thread_info.range_len) > 0) {
+      if (other_thread_info.range_len.compare_exchange_strong(range_len,
+                                                              range_len
+                                                                  - 1)) {
+        int64_t tail = other_thread_info.range_end--;
+        other_func->operator()(tail - 1);
+      }
+    }
+  }
+#endif  // MACE_ENABLE_THERAD_STEAL_WORK
+}
+
+void ThreadPool::Calculate1DTileCount(int64_t start,
+                                      int64_t end,
+                                      int64_t step,
+                                      int *out_tile_size,
+                                      int *out_max_thread_tiles) {
+  if (start >= end) {
+    return;
+  }
+
+  const int64_t items = 1 + (end - start - 1) / step;
+  const int64_t tile_size = std::max(static_cast<int64_t>(1), items / default_tile_count_);
+  const int64_t tile_count = RoundUpDiv(items, tile_size);
+
+  const int64_t iterations = tile_count;
+  const size_t thread_count = threads_.size();
+  const int64_t iters_per_thread = iterations / thread_count;
+  const int64_t remainder = iterations % thread_count;
+  int64_t max_range_len = 0;
+  for (size_t i = 0; i < thread_count; ++i) {
+    const int64_t range_len = iters_per_thread + (static_cast<int64_t>(i) < remainder);
+    if (range_len > max_range_len) {
+      max_range_len = range_len;
+    }
+  }
+
+  if (out_tile_size != nullptr) {
+    *out_tile_size = static_cast<int>(tile_size);
+  }
+  if (out_max_thread_tiles != nullptr) {
+    *out_max_thread_tiles = static_cast<int>(max_range_len);
+  }
+}
+
+void ThreadPool::Calculate2DTileCount(int64_t start0,
+                                      int64_t end0,
+                                      int64_t step0,
+                                      int64_t start1,
+                                      int64_t end1,
+                                      int64_t step1,
+                                      int *out_tile_size0,
+                                      int *out_tile_size1,
+                                      int *out_max_thread_tiles) {
+  if (start0 >= end0 || start1 >= end1) {
+    return;
+  }
+
+  const int64_t items0 = 1 + (end0 - start0 - 1) / step0;
+  const int64_t items1 = 1 + (end1 - start1 - 1) / step1;
+
+  int64_t tile_size0;
+  int64_t tile_size1;
+  if (items0 >= default_tile_count_) {
+    tile_size0 = items0 / default_tile_count_;
+    tile_size1 = items1;
+  } else {
+    tile_size0 = 1;
+    tile_size1 = std::max(static_cast<int64_t>(1),
+                          items1 * items0 / default_tile_count_);
+  }
+
+  const int64_t tile_count0 = RoundUpDiv(items0, tile_size0);
+  const int64_t tile_count1 = RoundUpDiv(items1, tile_size1);
+
+  const int64_t iterations = tile_count0 * tile_count1;
+  const size_t thread_count = threads_.size();
+  const int64_t iters_per_thread = iterations / thread_count;
+  const int64_t remainder = iterations % thread_count;
+  int64_t max_range_len = 0;
+  for (size_t i = 0; i < thread_count; ++i) {
+    const int64_t range_len = iters_per_thread + (static_cast<int64_t>(i) < remainder);
+    if (range_len > max_range_len) {
+      max_range_len = range_len;
+    }
+  }
+
+  if (out_tile_size0 != nullptr) {
+    *out_tile_size0 = static_cast<int>(tile_size0);
+  }
+  if (out_tile_size1 != nullptr) {
+    *out_tile_size1 = static_cast<int>(tile_size1);
+  }
+  if (out_max_thread_tiles != nullptr) {
+    *out_max_thread_tiles = static_cast<int>(max_range_len);
+  }
+}
+
+void ThreadPool::Compute1D(const std::function<void(int64_t,
+                                                    int64_t,
+                                                    int64_t)> &func,
+                           const int64_t start,
+                           const int64_t end,
+                           const int64_t step,
+                           int64_t tile_size,
+                           const int cost_per_item) {
+  if (start >= end) {
+    return;
+  }
+
+  const int64_t items = 1 + (end - start - 1) / step;
+  if (threads_.size() <= 1 || (cost_per_item >= 0
+      && items * cost_per_item < kMaxCostUsingSingleThread)) {
+    func(start, end, step);
+    return;
+  }
+
+  if (tile_size == 0) {
+    tile_size = std::max(static_cast<int64_t>(1), items / default_tile_count_);
+  }
+
+  const int64_t step_tile_size = step * tile_size;
+  const int64_t tile_count = RoundUpDiv(items, tile_size);
+
+  Run([=](int64_t tile_idx) {
+    const int64_t tile_start = start + tile_idx * step_tile_size;
+    const int64_t tile_end = std::min(end, tile_start + step_tile_size);
+    func(tile_start, tile_end, step);
+  }, tile_count);
+}
+
+void ThreadPool::Compute2D(const std::function<void(const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t)> &func,
+                           const int64_t start0,
+                           const int64_t end0,
+                           const int64_t step0,
+                           const int64_t start1,
+                           const int64_t end1,
+                           const int64_t step1,
+                           int64_t tile_size0,
+                           int64_t tile_size1,
+                           const int cost_per_item) {
+  if (start0 >= end0 || start1 >= end1) {
+    return;
+  }
+
+  const int64_t items0 = 1 + (end0 - start0 - 1) / step0;
+  const int64_t items1 = 1 + (end1 - start1 - 1) / step1;
+  if (threads_.size() <= 1 || (cost_per_item >= 0
+      && items0 * items1 * cost_per_item < kMaxCostUsingSingleThread)) {
+    func(start0, end0, step0, start1, end1, step1);
+    return;
+  }
+
+  if (tile_size0 == 0 || tile_size1 == 0) {
+    if (items0 >= default_tile_count_) {
+      tile_size0 = items0 / default_tile_count_;
+      tile_size1 = items1;
+    } else {
+      tile_size0 = 1;
+      tile_size1 = std::max(static_cast<int64_t>(1),
+                            items1 * items0 / default_tile_count_);
+    }
+  }
+
+  const int64_t step_tile_size0 = step0 * tile_size0;
+  const int64_t step_tile_size1 = step1 * tile_size1;
+  const int64_t tile_count0 = RoundUpDiv(items0, tile_size0);
+  const int64_t tile_count1 = RoundUpDiv(items1, tile_size1);
+
+  const std::vector<int64_t> items = {items0, items1};
+  const std::vector<int64_t> tile_sizes = {tile_size0, tile_size1};
+  const std::vector<int64_t> step_tile_sizes = {step_tile_size0, step_tile_size1};
+  const std::vector<int64_t> tile_counts = {tile_count0, tile_count1};
+
+  Run([=](int64_t tile_idx) {
+    const int64_t tile_idx0 = tile_idx / tile_count1;
+    const int64_t tile_idx1 = tile_idx - tile_idx0 * tile_count1;
+    const int64_t tile_start0 = start0 + tile_idx0 * step_tile_size0;
+    const int64_t tile_end0 = std::min(end0, tile_start0 + step_tile_size0);
+    const int64_t tile_start1 = start1 + tile_idx1 * step_tile_size1;
+    const int64_t tile_end1 = std::min(end1, tile_start1 + step_tile_size1);
+    func(tile_start0, tile_end0, step0, tile_start1, tile_end1, step1);
+  }, tile_count0 * tile_count1);
+}
+
+void ThreadPool::Compute3D(const std::function<void(const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t,
+                                                    const int64_t)> &func,
+                           const int64_t start0,
+                           const int64_t end0,
+                           const int64_t step0,
+                           const int64_t start1,
+                           const int64_t end1,
+                           const int64_t step1,
+                           const int64_t start2,
+                           const int64_t end2,
+                           const int64_t step2,
+                           int64_t tile_size0,
+                           int64_t tile_size1,
+                           int64_t tile_size2,
+                           const int cost_per_item) {
+  if (start0 >= end0 || start1 >= end1 || start2 >= end1) {
+    return;
+  }
+
+  const int64_t items0 = 1 + (end0 - start0 - 1) / step0;
+  const int64_t items1 = 1 + (end1 - start1 - 1) / step1;
+  const int64_t items2 = 1 + (end2 - start2 - 1) / step2;
+  if (threads_.size() <= 1 || (cost_per_item >= 0
+      && items0 * items1 * items2 * cost_per_item
+          < kMaxCostUsingSingleThread)) {
+    func(start0, end0, step0, start1, end1, step1, start2, end2, step2);
+    return;
+  }
+
+  if (tile_size0 == 0 || tile_size1 == 0 || tile_size2 == 0) {
+    if (items0 >= default_tile_count_) {
+      tile_size0 = items0 / default_tile_count_;
+      tile_size1 = items1;
+      tile_size2 = items2;
+    } else {
+      tile_size0 = 1;
+      const int64_t items01 = items1 * items0;
+      if (items01 >= default_tile_count_) {
+        tile_size1 = items01 / default_tile_count_;
+        tile_size2 = items2;
+      } else {
+        tile_size1 = 1;
+        tile_size2 = std::max(static_cast<int64_t>(1),
+                              items01 * items2 / default_tile_count_);
+      }
+    }
+  }
+
+  const int64_t step_tile_size0 = step0 * tile_size0;
+  const int64_t step_tile_size1 = step1 * tile_size1;
+  const int64_t step_tile_size2 = step2 * tile_size2;
+  const int64_t tile_count0 = RoundUpDiv(items0, tile_size0);
+  const int64_t tile_count1 = RoundUpDiv(items1, tile_size1);
+  const int64_t tile_count2 = RoundUpDiv(items2, tile_size2);
+  const int64_t tile_count12 = tile_count1 * tile_count2;
+
+  Run([=](int64_t tile_idx) {
+    const int64_t tile_idx0 = tile_idx / tile_count12;
+    const int64_t tile_idx12 = tile_idx - tile_idx0 * tile_count12;
+    const int64_t tile_idx1 = tile_idx12 / tile_count2;
+    const int64_t tile_idx2 = tile_idx12 - tile_idx1 * tile_count2;
+    const int64_t tile_start0 = start0 + tile_idx0 * step_tile_size0;
+    const int64_t tile_end0 = std::min(end0, tile_start0 + step_tile_size0);
+    const int64_t tile_start1 = start1 + tile_idx1 * step_tile_size1;
+    const int64_t tile_end1 = std::min(end1, tile_start1 + step_tile_size1);
+    const int64_t tile_start2 = start2 + tile_idx2 * step_tile_size2;
+    const int64_t tile_end2 = std::min(end2, tile_start2 + step_tile_size2);
+    func(tile_start0,
+         tile_end0,
+         step0,
+         tile_start1,
+         tile_end1,
+         step1,
+         tile_start2,
+         tile_end2,
+         step2);
+  }, tile_count0 * tile_count12);
+}
+
+}  // namespace utils
+}  // namespace mace

@@ -1,0 +1,12 @@
+{
+  "SocName": "Snapdragon865",
+  "GPUWarpSize": 64,
+  "MaxWorkGroupSize": 1024,
+  "PredictModelPath": "/data/local/tmp/codl/saved_prediction_models",
+  "PredictModelFiles": ["mulayer_conv2d_cpu.json",
+                        "mulayer_conv2d_gpu.json",
+                        "mulayer_pooling_cpu.json",
+                        "mulayer_pooling_gpu.json",
+                        "mulayer_fc_cpu.json",
+                        "mulayer_fc_gpu.json"]
+}

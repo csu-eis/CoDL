@@ -1,0 +1,36 @@
+# Copyright 2018 The MACE Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import os
+
+from jinja2 import Environment, FileSystemLoader
+
+
+FLAGS = None
+
+
+def gen_mace_engine_factory(model_tags, embed_model_data, output_dir):
+    cwd = os.path.dirname(__file__)
+    j2_env = Environment(
+        loader=FileSystemLoader(cwd), trim_blocks=True)
+    # generate mace_run BUILD file
+    template_name = 'mace_engine_factory.h.jinja2'
+    model_tags = list(model_tags)
+    source = j2_env.get_template(template_name).render(
+        model_tags=model_tags,
+        embed_model_data=embed_model_data,
+    )
+    with open(output_dir + '/mace_engine_factory.h', "w") as f:
+        f.write(source)

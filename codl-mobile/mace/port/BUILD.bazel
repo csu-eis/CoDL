@@ -1,0 +1,27 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])  # Apache 2.0
+
+cc_library(
+    name = "port",
+    deps = [
+        "//mace/port/android:port_android",
+        "//mace/port/darwin:port_darwin",
+        "//mace/port/linux:port_linux",
+    ],
+)
+
+cc_library(
+    name = "port_base",
+    srcs = [
+        "env.cc",
+        "logger.cc",
+        "file_system.cc",
+    ],
+    deps = [
+        "//mace/utils",
+        "//include:public_headers",
+    ],
+)

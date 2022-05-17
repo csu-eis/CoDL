@@ -1,0 +1,294 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])  # Apache 2.0
+
+load(
+    "//mace:mace.bzl",
+    "if_android",
+    "if_neon_enabled",
+    "if_opencl_enabled",
+    "if_rpcmem_enabled",
+    "if_buildlib_enabled",
+    "if_codl_enabled",
+)
+
+cc_library(
+    name = "statistics_util",
+    hdrs = ["statistics_util.h"],
+    srcs = ["statistics_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ],
+    deps = [
+        "//mace/utils"
+    ]
+)
+
+cc_library(
+    name = "tensor_transpose_util",
+    hdrs = ["tensor_transpose_util.h"],
+    srcs = ["tensor_transpose_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        "//mace/core",
+        "//mace/ops",
+        "//mace/utils",
+        ":tensor_buffer_util"
+    ]
+)
+
+cc_library(
+    name = "gemm_test_task",
+    hdrs = ["gemm_test_param.h",
+            "gemm_test_task.h"],
+    srcs = ["gemm_test_task.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        "//mace/ops",
+        "//mace/utils",
+        ":device_util",
+        ":tensor_buffer_util",
+        ":conv_2d_util",
+        ":test_task"
+    ],
+    alwayslink = 1
+)
+
+cc_library(
+    name = "libgemm_test",
+    hdrs = ["gemm_test.h"],
+    srcs = ["gemm_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra",
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_rpcmem_enabled(["-DMACE_ENABLE_RPCMEM"])
+      + if_buildlib_enabled(["-DMACE_BUILD_LIBRARY"]),
+    deps = [
+        "//mace/ops",
+        "//mace/utils",
+        ":io_util",
+        ":tensor_buffer_util",
+        ":statistics_util",
+        ":gemm_test_task"
+    ],
+    alwayslink = 1
+)
+
+cc_binary(
+    name = "tensor_buffer_test",
+    srcs = ["tensor_buffer_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        "//mace/ops",
+        ":tensor_buffer_util"
+    ]
+)
+
+cc_binary(
+    name = "tensor_buffer_gpu_test",
+    srcs = ["tensor_buffer_gpu_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        "//mace/ops",
+        ":tensor_buffer_util"
+    ]
+)
+
+cc_binary(
+    name = "conv2d_part_plan_test",
+    srcs = ["conv2d_part_plan_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        "//mace/utils"
+    ]
+)
+
+cc_binary(
+    name = "conv2d_test",
+    srcs = [
+        #"conv2d_gpu_test_v1.cc",
+        "conv2d_gpu_test_v2.cc",
+        "conv2d_cpu_gpu_test.cc",
+        "buffer_image_transform_test.cc",
+        "buffer_image_transform_test_v2.cc",
+        "buffer_map_copy_test.cc",
+        "buffer_map_unmap_test.cc",
+        "make_partition_plan_test.cc"
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        "//mace/core",
+        "//mace/ops",
+        ":tensor_buffer_util",
+        ":tensor_transpose_util",
+        ":statistics_util",
+        ":conv_2d_util",
+        ":libconv2d_test"
+    ]
+)
+
+cc_library(
+    name = "libconv2d_test_dynamic",
+    srcs = ["libconv2d_test.so"],
+    visibility = ["//visibility:public"]
+)
+
+cc_binary(
+    name = "libconv2d_test.so",
+    linkshared = 1,
+    linkstatic = 0,
+    deps = [
+        ":libconv2d_test"
+    ]
+)
+
+cc_binary(
+    name = "gemm_test",
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        "//mace/core",
+        "//mace/ops",
+        ":tensor_buffer_util",
+        ":statistics_util",
+        ":libgemm_test"
+    ]
+)
+
+cc_binary(
+    name = "cpp_json_example",
+    srcs = ["cpp_json_example.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ],
+    deps = [
+        "//mace/utils:cpp_json"
+    ]
+)
+
+cc_library(
+    name = "librandom_forest_model_test",
+    hdrs = ["random_forest_model_test_param.h"],
+    srcs = ["random_forest_model_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra",
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_rpcmem_enabled(["-DMACE_ENABLE_RPCMEM"])
+      + if_buildlib_enabled(["-DMACE_BUILD_LIBRARY"]),
+    deps = [
+        "//external:gflags_nothreads",
+        "//mace/core",
+        "//mace/ops",
+        "//mace/utils",
+        "//test/codlconv2drun/core:test_base",
+    ],
+    alwayslink = 1
+)
+
+cc_binary(
+    name = "random_forest_model_test",
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        ":librandom_forest_model_test"
+    ]
+)
+
+cc_library(
+    name = "libconv2d_partition_prediction_test",
+    srcs = ["conv2d_partition_prediction_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra",
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_rpcmem_enabled(["-DMACE_ENABLE_RPCMEM"])
+      + if_buildlib_enabled(["-DMACE_BUILD_LIBRARY"]),
+    deps = [
+        "//mace/core",
+        "//mace/ops",
+        "//mace/utils",
+        "//mace/libmace",
+        ":device_util"
+    ],
+    alwayslink = 1
+)
+
+cc_binary(
+    name = "conv2d_partition_prediction_test",
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        ":libconv2d_partition_prediction_test"
+    ]
+)
+
+
+
+cc_library(
+    name = "libconv2d_latency_prediction_test",
+    srcs = ["conv2d_latency_prediction_test.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra",
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_rpcmem_enabled(["-DMACE_ENABLE_RPCMEM"])
+      + if_buildlib_enabled(["-DMACE_BUILD_LIBRARY"]),
+    deps = [
+        "//mace/core",
+        "//mace/ops",
+        "//mace/utils",
+        "//mace/libmace"
+    ],
+    alwayslink = 1
+)
+
+cc_binary(
+    name = "conv2d_latency_prediction_test",
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        ":libconv2d_latency_prediction_test"
+    ]
+)

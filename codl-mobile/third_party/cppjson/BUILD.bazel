@@ -1,0 +1,11 @@
+
+licenses(["notice"])
+
+exports_files(["license.txt"])
+
+cc_library(
+    name = "libcppjson",
+    hdrs = glob(["*.h"]),
+    linkopts = ["-Wl"],
+    visibility = ["//visibility:public"],
+)

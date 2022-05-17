@@ -1,0 +1,37 @@
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
+cc_library(
+    name = "libLinearRegression",
+    srcs = [
+        "src/LPreProcess.cpp",
+        "src/LRegression.cpp",
+    ],
+    hdrs = [
+        "include/LMatrix.h",
+        "include/LPreProcess.h",
+        "include/LRegression.h",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "libCSVIO",
+    srcs = ["src/LCSVIo.cpp"],
+    hdrs = [
+        "include/LCSVIo.h",
+        "include/LMatrix.h",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "LinearRegression_main",
+    srcs = ["main.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":libCSVIO",
+        ":libLinearRegression",
+    ],
+)

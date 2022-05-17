@@ -1,0 +1,186 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])  # Apache 2.0
+
+load(
+    "//mace:mace.bzl",
+    "if_android",
+    "if_neon_enabled",
+    "if_quantize_enabled",
+    "if_opencl_enabled",
+    "if_rpcmem_enabled",
+    "if_buildlib_enabled",
+    "if_codl_enabled",
+)
+
+cc_library(
+    name = "op_test_task",
+    hdrs = [
+        "conv2d_test_param.h",
+        "conv2d_test_task.h",
+        "pooling_test_param.h",
+        "pooling_test_task.h",
+        "fully_connected_test_param.h",
+        "fully_connected_test_task.h",
+        "deconv2d_test_param.h",
+        "deconv2d_test_task.h",
+        "matmul_test_param.h",
+        "matmul_test_task.h"
+    ],
+    srcs = [
+        "conv2d_test_task.cc",
+        #"conv2d_test_task_v1.cc",
+        "conv2d_cpu_gpu_test_task.cc",
+        "pooling_test_task.cc",
+        "fully_connected_test_task.cc",
+        "deconv2d_test_task.cc",
+        "matmul_test_task.cc"
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_quantize_enabled(["-DMACE_ENABLE_QUANTIZE"])
+      + if_codl_enabled(["-DMACE_ENABLE_CODL"]),
+    deps = [
+        "//mace/ops",
+        "//mace/utils",
+        "//test/codl_run/utils:device_util",
+        "//test/codl_run/utils:tensor_buffer_util",
+        "//test/codl_run/utils:conv_2d_util",
+        "//test/codl_run/utils:pooling_util",
+        "//test/codl_run/utils:fully_connected_util",
+        "//test/codl_run/utils:deconv_2d_util",
+        "//test/codl_run/utils:matmul_util",
+        "//test/codl_run/core:test_task"
+    ],
+    alwayslink = 1
+)
+
+cc_library(
+    name = "op_test_task_chain",
+    hdrs = [
+        "op_test_task_chain.h",
+        "op_chain_executor.h",
+        "op_chain_helper.h",
+        "op_chain_search.h",
+        "op_chain_latency_predict.h",
+    ],
+    srcs = [
+        "op_test_task_chain.cc",
+        "op_chain_executor.cc",
+        "op_chain_helper.cc",
+        "op_chain_search.cc",
+        "op_chain_latency_predict.cc",
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_codl_enabled(["-DMACE_ENABLE_CODL"]),
+    deps = [
+        "//test/codl_run/core:test_task",
+        ":op_test_task"
+    ],
+    alwayslink = 1
+)
+
+cc_library(
+    name = "conv2d_test_task_chain",
+    hdrs = [
+        "conv2d_test_task_chain.h",
+    ],
+    srcs = [
+        "conv2d_test_task_chain.cc",
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_codl_enabled(["-DMACE_ENABLE_CODL"]),
+    deps = [
+        ":op_test_task_chain",
+        ":op_test_task"
+    ],
+    alwayslink = 1
+)
+
+cc_library(
+    name = "libop_test",
+    hdrs = ["conv2d_test_param.h",
+            "conv2d_test.h"
+    ],
+    srcs = ["conv2d_test.cc",
+            #"conv2d_test_v1.cc",
+            "conv2d_test_v2.cc"
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra",
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_rpcmem_enabled(["-DMACE_ENABLE_RPCMEM"])
+      + if_buildlib_enabled(["-DMACE_BUILD_LIBRARY"]),
+    deps = [
+        "//external:gflags_nothreads",
+        "//mace/ops",
+        "//mace/utils",
+        "//test/codl_run/utils:io_util",
+        "//test/codl_run/utils:tensor_buffer_util",
+        "//test/codl_run/utils:conv_2d_util",
+        ":op_test_task"
+    ],
+    alwayslink = 1
+)
+
+cc_library(
+    name = "libop_chain_test",
+    hdrs = [
+        "nn_model_builder.h",
+    ],
+    srcs = [
+        "nn_model_builder.cc",
+        "op_chain_test.cc",
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra",
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_rpcmem_enabled(["-DMACE_ENABLE_RPCMEM"])
+      + if_buildlib_enabled(["-DMACE_BUILD_LIBRARY"]),
+    deps = [
+        "//external:gflags_nothreads",
+        ":op_test_task_chain"
+    ],
+    alwayslink = 1
+)
+
+cc_binary(
+    name = "codl_op_run",
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        ":libop_test"
+    ]
+)
+
+cc_binary(
+    name = "codl_run",
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        ":libop_chain_test"
+    ]
+)

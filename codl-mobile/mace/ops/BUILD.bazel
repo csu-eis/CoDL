@@ -1,0 +1,298 @@
+# Description:
+#
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])  # Apache 2.0
+
+load(
+    "//mace:mace.bzl",
+    "if_android",
+    "if_android_armv7",
+    "if_hexagon_enabled",
+    "if_neon_enabled",
+    "if_opencl_enabled",
+    "if_openmp_enabled",
+    "if_quantize_enabled",
+    "if_rpcmem_enabled",
+    "if_codl_enabled"
+)
+
+cc_library(
+    name = "common",
+    srcs = glob(
+        [
+            "common/*.cc",
+        ],
+    ),
+    hdrs = glob(
+        [
+            "common/*.h",
+        ],
+    ),
+    copts = [
+        "-Werror",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+    ] + if_openmp_enabled([
+        "-fopenmp",
+    ]) + if_neon_enabled([
+        "-DMACE_ENABLE_NEON",
+    ]) + if_android_armv7([
+        "-mfpu=neon-fp16",
+        "-mfloat-abi=softfp",
+    ]) + if_opencl_enabled([
+        "-DMACE_ENABLE_OPENCL",
+    ]) + if_quantize_enabled([
+        "-DMACE_ENABLE_QUANTIZE",
+    ]) + if_hexagon_enabled([
+        "-DMACE_ENABLE_HEXAGON",
+    ]) + if_rpcmem_enabled([
+        "-DMACE_ENABLE_RPCMEM",
+    ]) + if_codl_enabled([
+        "-DMACE_ENABLE_CODL",
+    ]),
+    deps = [
+        "//mace/core",
+    ],
+)
+
+cc_library(
+    name = "ref_kernels",
+    srcs = glob(
+        [
+            "ref/*.cc",
+        ],
+    ),
+    hdrs = glob(
+        [
+            "ref/*.h",
+        ],
+    ),
+    copts = [
+        "-Werror",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+    ] + if_openmp_enabled([
+        "-fopenmp",
+    ]) + if_neon_enabled([
+        "-DMACE_ENABLE_NEON",
+    ]) + if_android_armv7([
+        "-mfpu=neon-fp16",
+        "-mfloat-abi=softfp",
+    ]) + if_opencl_enabled([
+        "-DMACE_ENABLE_OPENCL",
+    ]) + if_quantize_enabled([
+        "-DMACE_ENABLE_QUANTIZE",
+    ]) + if_hexagon_enabled([
+        "-DMACE_ENABLE_HEXAGON",
+    ]) + if_rpcmem_enabled([
+        "-DMACE_ENABLE_RPCMEM",
+    ]) + if_codl_enabled([
+        "-DMACE_ENABLE_CODL",
+    ]),
+    deps = [
+        ":common",
+        "//mace/core",
+    ],
+)
+
+# After refactor, all arm neon kernels go here.
+# Could be shipped to other product use.
+cc_library(
+    name = "arm_neon_kernels",
+    srcs = glob(
+        [
+            "arm/fp32/*.cc",
+            "arm/fp16/gemv.h",
+            "arm/fp16/gemv.cc",
+        ],
+        exclude = [
+            "arm/fp32/*_test.cc",
+        ],
+    ) + if_quantize_enabled(glob(
+        [
+            "arm/q8/*.cc",
+        ],
+        exclude = [
+            "arm/q8/*_test.cc",
+        ],
+    )),
+    hdrs = glob(
+        [
+            "arm/fp32/*.h",
+        ],
+    ) + if_quantize_enabled(glob(
+        [
+            "arm/q8/*.h",
+        ],
+    )),
+    copts = [
+        "-Werror",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+    ] + if_openmp_enabled([
+        "-fopenmp",
+    ]) + if_neon_enabled([
+        "-DMACE_ENABLE_NEON",
+    ]) + if_android_armv7([
+        "-mfpu=neon-fp16",
+        "-mfloat-abi=softfp",
+    ]) + if_opencl_enabled([
+        "-DMACE_ENABLE_OPENCL",
+    ]) + if_quantize_enabled([
+        "-DMACE_ENABLE_QUANTIZE",
+    ]) + if_hexagon_enabled([
+        "-DMACE_ENABLE_HEXAGON",
+    ]) + if_rpcmem_enabled([
+        "-DMACE_ENABLE_RPCMEM",
+    ]) + if_codl_enabled([
+        "-DMACE_ENABLE_CODL",
+    ]),
+    deps = [
+        ":common",
+        "//mace/core",
+    ],
+)
+
+# After refactor, all GPU OpenCL kernels go here.
+# Could be shipped to other product use.
+cc_library(
+    name = "opencl_kernels",
+    srcs = glob(
+        [
+            "opencl/*.cc",
+            "opencl/**/*.cc",
+        ],
+    ),
+    hdrs = glob(
+        [
+            "opencl/*.h",
+            "opencl/**/*.h",
+        ],
+    ),
+    copts = [
+        "-Werror",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+    ] + if_openmp_enabled([
+        "-fopenmp",
+    ]) + if_neon_enabled([
+        "-DMACE_ENABLE_NEON",
+    ]) + if_android_armv7([
+        "-mfpu=neon-fp16",
+        "-mfloat-abi=softfp",
+    ]) + if_opencl_enabled([
+        "-DMACE_ENABLE_OPENCL",
+    ]) + if_quantize_enabled([
+        "-DMACE_ENABLE_QUANTIZE",
+    ]) + if_hexagon_enabled([
+        "-DMACE_ENABLE_HEXAGON",
+    ]) + if_rpcmem_enabled([
+        "-DMACE_ENABLE_RPCMEM",
+    ]) + if_codl_enabled([
+        "-DMACE_ENABLE_CODL",
+    ]),
+    deps = [
+        ":common",
+        "//mace/core",
+    ],
+)
+
+cc_library(
+    name = "internal_ops",
+    srcs = glob(
+        [
+            "*.cc",
+        ],
+        exclude = [
+        ],
+    ),
+    hdrs = glob(
+        [
+            "*.h",
+        ],
+        exclude = [
+            "fixpoint.h",
+            "common/gemmlowp_util.h",
+            "quantization_util.h",
+        ],
+    ) + if_quantize_enabled(glob([
+        "fixpoint.h",
+        "common/gemmlowp_util.h",
+        "quantization_util.h",
+    ])),
+    copts = [
+        "-Werror",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+    ] + if_openmp_enabled([
+        "-fopenmp",
+    ]) + if_neon_enabled([
+        "-DMACE_ENABLE_NEON",
+    ]) + if_android_armv7([
+        "-mfpu=neon-fp16",
+        "-mfloat-abi=softfp",
+    ]) + if_opencl_enabled([
+        "-DMACE_ENABLE_OPENCL",
+    ]) + if_quantize_enabled([
+        "-DMACE_ENABLE_QUANTIZE",
+    ]) + if_hexagon_enabled([
+        "-DMACE_ENABLE_HEXAGON",
+    ]) + if_rpcmem_enabled([
+        "-DMACE_ENABLE_RPCMEM",
+    ]) + if_codl_enabled([
+        "-DMACE_ENABLE_CODL",
+    ]),
+    linkopts = if_android(["-lm"]),
+    deps = [
+        ":ref_kernels",
+        "//mace/core",
+    ] + if_quantize_enabled([
+        "@tflite",
+        "@gemmlowp",
+    ]) + if_neon_enabled([
+        ":arm_neon_kernels",
+    ]) + if_opencl_enabled([
+        ":opencl_kernels",
+    ]),
+)
+
+cc_library(
+    name = "ops",
+    srcs = [
+        "registry/ops_registry.cc",
+        "registry/pr_predictors_registry.cc",
+    ],
+    hdrs = [
+        "registry/ops_registry.h",
+        "registry/pr_predictors_registry.h",
+    ],
+    copts = [
+        "-Werror",
+        "-Wextra",
+        "-Wno-missing-field-initializers",
+    ] + if_openmp_enabled([
+        "-fopenmp",
+    ]) + if_neon_enabled([
+        "-DMACE_ENABLE_NEON",
+    ]) + if_android_armv7([
+        "-mfpu=neon-fp16",
+        "-mfloat-abi=softfp",
+    ]) + if_opencl_enabled([
+        "-DMACE_ENABLE_OPENCL",
+    ]) + if_quantize_enabled([
+        "-DMACE_ENABLE_QUANTIZE",
+    ]) + if_hexagon_enabled([
+        "-DMACE_ENABLE_HEXAGON",
+    ]) + if_rpcmem_enabled([
+        "-DMACE_ENABLE_RPCMEM",
+    ]) + if_codl_enabled([
+        "-DMACE_ENABLE_CODL",
+    ]),
+    linkopts = if_android(["-lm"]),
+    deps = [
+        "internal_ops",
+    ],
+)

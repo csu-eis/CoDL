@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+
+datasets/
+lat_datasets/
+logs/
+results/
+models/
+temp/
+
+venv/
+.vscode/
+.idea/
+
+*.log

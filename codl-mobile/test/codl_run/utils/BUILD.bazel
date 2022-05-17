@@ -1,0 +1,130 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])  # Apache 2.0
+
+load(
+    "//mace:mace.bzl",
+    "if_android",
+    "if_neon_enabled",
+    "if_quantize_enabled",
+    "if_opencl_enabled",
+    "if_rpcmem_enabled",
+    "if_buildlib_enabled",
+    "if_codl_enabled",
+)
+
+cc_library(
+    name = "io_util",
+    hdrs = ["io_util.h"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        "//mace/utils"
+    ]
+)
+
+cc_library(
+    name = "device_util",
+    hdrs = ["device_util.h"],
+    srcs = ["device_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        "//mace/core",
+        "//mace/libmace",
+        "//mace/utils"
+    ]
+)
+
+cc_library(
+    name = "tensor_buffer_util",
+    hdrs = ["tensor_buffer_util.h"],
+    srcs = ["tensor_buffer_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"]),
+    deps = [
+        ":device_util"
+    ]
+)
+
+cc_library(
+    name = "conv_2d_util",
+    hdrs = ["conv_2d_util.h"],
+    srcs = ["conv_2d_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_quantize_enabled(["-DMACE_ENABLE_QUANTIZE"]),
+    deps = [
+        "//mace/ops"
+    ]
+)
+
+cc_library(
+    name = "pooling_util",
+    hdrs = ["pooling_util.h"],
+    srcs = ["pooling_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_quantize_enabled(["-DMACE_ENABLE_QUANTIZE"]),
+    deps = [
+        "//mace/ops"
+    ]
+)
+
+cc_library(
+    name = "fully_connected_util",
+    hdrs = ["fully_connected_util.h"],
+    srcs = ["fully_connected_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_quantize_enabled(["-DMACE_ENABLE_QUANTIZE"]),
+    deps = [
+        "//mace/ops"
+    ]
+)
+
+cc_library(
+    name = "deconv_2d_util",
+    hdrs = ["deconv_2d_util.h"],
+    srcs = ["deconv_2d_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"]),
+    deps = [
+        "//mace/ops"
+    ]
+)
+
+cc_library(
+    name = "matmul_util",
+    hdrs = ["matmul_util.h"],
+    srcs = ["matmul_util.cc"],
+    copts = [
+        "-Werror",
+        "-Wextra"
+    ] + if_opencl_enabled(["-DMACE_ENABLE_OPENCL"])
+      + if_neon_enabled(["-DMACE_ENABLE_NEON"])
+      + if_quantize_enabled(["-DMACE_ENABLE_QUANTIZE"]),
+    deps = [
+        "//mace/ops"
+    ]
+)

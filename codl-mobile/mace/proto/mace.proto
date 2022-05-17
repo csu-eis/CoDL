@@ -1,0 +1,112 @@
+syntax = "proto2";
+
+package mace;
+
+option optimize_for = LITE_RUNTIME;
+
+// For better compatibility,
+// the mace.proto is refered from tensorflow and caffe2.
+
+enum DataType {
+  DT_INVALID = 0;
+  DT_FLOAT = 1;
+  DT_UINT8 = 2;
+  DT_HALF = 3;
+  DT_INT32 = 4;
+  DT_FLOAT16 = 5;
+  DT_BFLOAT16 = 6;
+  DT_INT16 = 7;
+  DT_INT8 = 8;
+}
+
+enum MemoryType {
+  CPU_BUFFER = 0;
+  GPU_BUFFER = 1;
+  GPU_IMAGE = 2;
+}
+
+message ConstTensor {
+  repeated int64 dims = 1;
+  optional DataType data_type = 2 [default = DT_FLOAT];
+  repeated float float_data = 3 [packed = true];
+  repeated int32 int32_data = 4 [packed = true];
+  optional string name = 5;
+  optional int64 offset = 6;
+  optional int64 data_size = 7;
+  optional float scale = 8;
+  optional int32 zero_point = 9;
+  optional float minval = 10;
+  optional float maxval = 11;
+  optional bool quantized = 12 [default = false];
+
+  optional uint32 node_id = 100;
+}
+
+message Argument {
+  optional string name = 1;
+  optional float f = 2;
+  optional int64 i = 3;
+  optional bytes s = 4;
+  repeated float floats = 5;
+  repeated int64 ints = 6;
+}
+
+// for hexagon mace-nnlib
+message NodeInput {
+  optional int32 node_id = 1;
+  optional int32 output_port = 2;
+}
+
+message OutputShape {
+  repeated int64 dims = 1;
+}
+
+message QuantizeActivationInfo {
+  optional float scale = 1;
+  optional int32 zero_point = 2;
+  optional float minval = 3;  // hexagon uses min/max
+  optional float maxval = 4;
+}
+
+message OperatorDef {
+  repeated string input = 1;
+  repeated string output = 2;
+  optional string name = 3;
+  optional string type = 4;
+  optional int32 device_type = 5;
+  repeated Argument arg = 6;
+  repeated OutputShape output_shape = 7;
+  repeated DataType output_type = 8;
+  repeated QuantizeActivationInfo quantize_info = 9;
+
+  // for mace it is mem_id, for micro, it is mem_offset
+  repeated int32 mem_id = 10;
+
+  // for hexagon mace-nnlib
+  optional uint32 node_id = 100;
+  optional uint32 op_id = 101;
+  optional uint32 padding = 102;
+  repeated NodeInput node_input = 103;
+  repeated int32 out_max_byte_size = 104;  // only support 32-bit len
+}
+
+message InputOutputInfo {
+  optional string name = 1;
+  optional int32 node_id = 2;
+  repeated int32 dims = 3;
+  optional int32 max_byte_size = 4;  // only support 32-bit len
+  optional DataType data_type = 5 [default = DT_FLOAT];
+  optional int32 data_format = 6 [default = 1];  // NHWC
+  optional float scale = 7;
+  optional int32 zero_point = 8;
+}
+
+message NetDef {
+  repeated OperatorDef op = 1;
+  repeated Argument arg = 2;
+  repeated ConstTensor tensors = 3;
+  optional DataType data_type = 4 [default = DT_FLOAT];
+
+  repeated InputOutputInfo input_info = 100;
+  repeated InputOutputInfo output_info = 101;
+}

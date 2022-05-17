@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="gemmlowp"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/liyin/w/dl/gemmlowp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/liyin/w/dl/gemmlowp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gemmlowp">
+				<Option output="/home/liyin/w/dl/gemmlowp/cmake-build-debug/gemmlowp" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/liyin/w/dl/gemmlowp/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/liyin/w/dl/gemmlowp/."/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/eight_bit_int_gemm"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/fixedpoint"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/internal"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/meta"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/profiling"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/public"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/test"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test"/>
+					<Add directory="/usr/include/c++/7"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
+					<Add directory="/usr/include/c++/7/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 gemmlowp"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="gemmlowp/fast">
+				<Option output="/home/liyin/w/dl/gemmlowp/cmake-build-debug/gemmlowp" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/liyin/w/dl/gemmlowp/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/liyin/w/dl/gemmlowp/."/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/eight_bit_int_gemm"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/fixedpoint"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/internal"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/meta"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/profiling"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/public"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/test"/>
+					<Add directory="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test"/>
+					<Add directory="/usr/include/c++/7"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
+					<Add directory="/usr/include/c++/7/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 gemmlowp/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/liyin/w/dl/gemmlowp/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/liyin/w/dl/gemmlowp/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/doc/quantization_example.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/eight_bit_int_gemm/eight_bit_int_gemm.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/eight_bit_int_gemm/eight_bit_int_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/fixedpoint/fixedpoint.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/fixedpoint/fixedpoint_avx.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/fixedpoint/fixedpoint_msa.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/fixedpoint/fixedpoint_neon.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/fixedpoint/fixedpoint_sse.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/allocator.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/block_params.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/common.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/compute.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/detect_platform.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/dispatch_gemm_shape.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel_avx.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel_default.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel_msa.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel_neon.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel_reference.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/kernel_sse.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/multi_thread_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/output.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/output_avx.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/output_msa.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/output_neon.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/output_sse.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/pack.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/pack_avx.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/pack_msa.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/pack_neon.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/pack_sse.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/platform.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/simd_wrappers.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/simd_wrappers_common_neon_sse.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/simd_wrappers_msa.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/simd_wrappers_neon.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/simd_wrappers_sse.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/single_thread_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/internal/unpack.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/base.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/legacy_multi_thread_common.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/legacy_multi_thread_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/legacy_multi_thread_gemv.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/legacy_operations_common.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/legacy_single_thread_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/multi_thread_common.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/multi_thread_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/multi_thread_transform.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/quantized_mul_kernels.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/quantized_mul_kernels_arm_32.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/quantized_mul_kernels_arm_64.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/single_thread_gemm.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/single_thread_transform.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/streams.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/streams_arm_32.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/streams_arm_64.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/test_gemm_correctness.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/test_streams_correctness.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/test_transform_benchmark.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/test_transform_correctness.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/transform_kernels.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/transform_kernels_arm_32.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/meta/transform_kernels_arm_64.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/profiling/instrumentation.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/profiling/profiler.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/profiling/pthread_everywhere.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/public/bit_depth.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/public/gemmlowp.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/public/map.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/public/output_stages.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/standalone/cache_counters.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/standalone/neon-gemm-kernel-benchmark.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/benchmark.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/benchmark_all_sizes.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/benchmark_meta_gemm.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/correctness_meta_gemm.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test/AppDelegate.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test/AppDelegate.mm">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test/ViewController.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test/ViewController.m">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/ios/gemmlowp_test/main.m">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test_allocator.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test_blocking_counter.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test_data.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test_data.h">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test_fixedpoint.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/test/test_math_helpers.cc">
+			<Option target="gemmlowp"/>
+		</Unit>
+		<Unit filename="/home/liyin/w/dl/gemmlowp/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
