@@ -1219,8 +1219,9 @@ OpenCLVersion OpenCLRuntime::ParseDeviceVersion(
   // <vendor-specific information>
 
   // NOTE(fucheng): Support 2.1 as 2.0
+  // NOTE(huan yang): Support 3.0 as 2.0
   auto words = Split(device_version, ' ');
-  if (words[1] == "2.0" || words[1] == "2.1") {
+  if (words[1] == "2.0" || words[1] == "2.1" || words[1] == "2.2" || words[1] == "3.1" || words[1] == "3.0") {
     return OpenCLVersion::CL_VER_2_0;
   } else if (words[1] == "1.2") {
     return OpenCLVersion::CL_VER_1_2;
