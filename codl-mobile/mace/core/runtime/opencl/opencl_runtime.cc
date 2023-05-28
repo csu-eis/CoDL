@@ -744,6 +744,9 @@ OpenCLRuntime::OpenCLRuntime(
 
   device_->getInfo(CL_DEVICE_MAX_COMPUTE_UNITS,
                    &device_compute_units_);
+  // Add at 20230528
+  device_->getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE,
+                   &max_wgp_size_);
   const char *out_of_range_check = getenv("MACE_OUT_OF_RANGE_CHECK");
   if (out_of_range_check != nullptr && strlen(out_of_range_check) == 1
       && out_of_range_check[0] == '1') {
@@ -762,11 +765,13 @@ OpenCLRuntime::OpenCLRuntime(
   }
 
   // DEBUG(fucheng): Show device info.
+  // Add at 20230528
   LOG(INFO) << "OpenCLRuntime:"
             << " global_mem_cacheline_size " << device_global_mem_cacheline_size_
             << ", global_mem_cache_size " << device_global_mem_cache_size_
             << ", compute_units " << device_compute_units_
             << ", warp_size " << warp_size_
+            << ", max_wgp_size " << max_wgp_size_
             << ", kwg_size " << kwg_size_;
   ShowCLMemoryFlags();
 }

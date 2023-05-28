@@ -252,11 +252,12 @@ class OpenCLRuntime {
   std::string platform_info_;
   std::string precompiled_binary_platform_info_;
   bool out_of_range_check_;
-  uint32_t device_global_mem_cacheline_size_;
+  uint64_t device_global_mem_cacheline_size_;
   uint64_t device_global_mem_cache_size_;
-  uint32_t device_compute_units_;
-  uint32_t warp_size_;
-  uint32_t kwg_size_;
+  uint64_t device_compute_units_;
+  uint64_t warp_size_;
+  uint64_t max_wgp_size_;
+  uint64_t kwg_size_;
 
   IONType ion_type_;
 #ifdef MACE_ENABLE_RPCMEM
